@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide Expense Report</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f0f0;padding:16px;color:#222}
+.wrap{max-width:700px;margin:0 auto}
+.logo-bar{display:flex;align-items:center;gap:14px;margin-bottom:1.2rem;padding-bottom:1rem;border-bottom:1px solid #ddd;background:#fff;padding:14px 18px;border-radius:12px;margin-bottom:14px}
+.logo-slot{width:52px;height:52px;border-radius:10px;border:2px dashed #ccc;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:10px;text-align:center;cursor:pointer;overflow:hidden;flex-shrink:0;line-height:1.4}
+.logo-slot img{width:100%;height:100%;object-fit:contain}
+.logo-slot:hover{border-color:#1D9E75;color:#1D9E75}
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:16px 20px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.card-title i{font-size:15px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field-row.full{grid-template-columns:1fr}
+.field-row.three{grid-template-columns:1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:#666;font-weight:600}
+.field input,.field select,.field textarea{font-size:14px;padding:8px 10px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#222;width:100%}
+.field textarea{resize:vertical;min-height:56px}
+.field .hint{font-size:11px;color:#aaa;margin-top:2px}
+.prog-info{display:none;background:#f0faf5;border:1px solid #9FE1CB;border-radius:8px;padding:9px 13px;margin-bottom:12px;font-size:12px;color:#0F6E56}
+.prog-info.show{display:block}
+.day-tab-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.day-tab{padding:6px 14px;border-radius:20px;border:1px solid #ddd;font-size:13px;cursor:pointer;background:#f8f8f8;color:#555;transition:all .15s}
+.day-tab.active{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.day-tab.add-day{border-style:dashed;color:#1D9E75;border-color:#1D9E75;background:#fff}
+.day-tab.add-day:hover{background:#f0faf5}
+.day-panel{display:none}
+.day-panel.active{display:block}
+.day-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #f0f0f0}
+.day-date-input{font-size:13px;padding:5px 9px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#222;width:140px}
+.day-label{font-size:13px;font-weight:700;color:#1D9E75}
+.remove-day-btn{margin-left:auto;font-size:12px;color:#ccc;background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px}
+.remove-day-btn:hover{color:#E24B4A;background:#fff0f0}
+.exp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px}
+.exp-table th{text-align:left;padding:6px 5px;color:#999;font-weight:600;border-bottom:1px solid #eee;font-size:11px;text-transform:uppercase}
+.exp-table td{padding:4px 3px;vertical-align:middle;border-bottom:1px solid #f8f8f8}
+.exp-table td input,.exp-table td select{font-size:12px;padding:5px 7px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;color:#222;width:100%}
+.receipt-cell{display:flex;align-items:center;gap:4px}
+.receipt-thumb{width:28px;height:28px;border-radius:4px;object-fit:cover;border:1px solid #ddd;cursor:pointer;flex-shrink:0}
+.receipt-upload{width:28px;height:28px;border-radius:4px;border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:#bbb;font-size:14px;background:#fafafa}
+.receipt-upload:hover{border-color:#1D9E75;color:#1D9E75;background:#f0faf5}
+.add-row-btn{font-size:12px;color:#1D9E75;background:none;border:none;cursor:pointer;padding:6px 0;display:flex;align-items:center;gap:4px}
+.add-row-btn:hover{color:#0F6E56}
+.del-btn{background:none;border:none;cursor:pointer;color:#ddd;font-size:14px;padding:3px}
+.del-btn:hover{color:#E24B4A}
+.day-total-bar{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:6px 4px;font-size:13px;color:#888;border-top:1px solid #f0f0f0;margin-top:4px}
+.day-total-bar strong{color:#222;font-size:14px}
+.transfer-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.transfer-card{border:1px solid #e8e8e8;border-radius:10px;padding:12px 14px}
+.transfer-card.arrival{border-left:3px solid #1D9E75}
+.transfer-card.departure{border-left:3px solid #185FA5}
+.transfer-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.transfer-card.arrival .transfer-label{color:#1D9E75}
+.transfer-card.departure .transfer-label{color:#185FA5}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.sum-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.sum-box{background:#f8f8f8;border-radius:8px;padding:10px 13px}
+.sum-box.green{background:#E1F5EE;border:1px solid #9FE1CB}
+.sum-box.red{background:#FCEBEB;border:1px solid #F09595}
+.sum-box.blue{background:#E6F1FB;border:1px solid #B5D4F4}
+.sum-box.pos .sv{color:#0F6E56}
+.sum-box.neg .sv{color:#c0392b}
+.sl{font-size:11px;color:#999;margin-bottom:3px}
+.sv{font-size:19px;font-weight:700;color:#222}
+.sum-box.green .sv{color:#0F6E56}
+.sum-box.red .sv{color:#c0392b}
+.sum-box.blue .sv{color:#185FA5}
+.divider{border:none;border-top:1px dashed #e8e8e8;margin:12px 0}
+.btn-row{display:flex;gap:10px;margin-top:4px}
+.btn{flex:1;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-green{background:#1D9E75;color:#fff}
+.btn-green:hover{background:#0F6E56}
+.btn-green:disabled{background:#9FE1CB;cursor:not-allowed}
+.btn-blue{background:#185FA5;color:#fff}
+.btn-blue:hover{background:#0c447c}
+.success{display:none;background:#E1F5EE;color:#0F6E56;border-radius:8px;padding:13px 18px;margin-top:12px;font-size:13px;font-weight:600;text-align:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-img{max-width:90vw;max-height:85vh;border-radius:8px;object-fit:contain}
+.modal-close{position:absolute;top:16px;right:18px;color:#fff;font-size:28px;cursor:pointer;line-height:1}
+@media(max-width:520px){
+  .field-row,.field-row.three,.transfer-grid,.sum-grid,.sum-grid-3{grid-template-columns:1fr}
+  .btn-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="logo-bar">
+  <div class="logo-slot" id="logoSlot" onclick="document.getElementById('logoInput').click()" title="Upload logo">Upload<br>Logo</div>
+  <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="loadLogo(event)">
+  <div>
+    <div style="font-size:16px;font-weight:700">Guide Expense Report</div>
+    <div style="font-size:12px;color:#999">SiamRise Travel</div>
+  </div>
+</div>
+
+<!-- TOUR INFO -->
+<div class="card">
+  <div class="card-title"><i class="ti ti-id"></i> Tour Information</div>
+  <div class="field-row">
+    <div class="field"><label>Booking No. *</label><input type="text" id="bookingNo" placeholder="202605001"></div>
+    <div class="field"><label>No. of Days</label>
+      <select id="numDays" onchange="updateDays()">
+        <option value="1">1 Day</option>
+        <option value="2">2 Days</option>
+        <option value="3">3 Days</option>
+        <option value="4">4 Days</option>
+        <option value="5">5 Days</option>
+        <option value="6">6 Days</option>
+        <option value="7">7 Days</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-row full">
+    <div class="field"><label>Programme Name *</label>
+      <select id="tourName" onchange="loadPreset()">
+        <option value="">— Select Programme —</option>
+        <option>A Cycling Day at Terracotta Village</option>
+        <option>A Leisure Day at the Lotus Farm</option>
+        <option>Ayutthaya Pleasure</option>
+        <option>Bangkok Bus Hopping</option>
+        <option>Bangkok Colorful Night by EV-Tuktuk</option>
+        <option>Bangkok Essential</option>
+        <option>Bangkok Half Day Walking Tour</option>
+        <option>Bangkok Heritage Unveiled</option>
+        <option>Bangkok Highlight</option>
+        <option>Bangkok Jungle Rides</option>
+        <option>Bangkok Old Quarter Walks</option>
+        <option>Bohemian Suphanburi</option>
+        <option>Countryside Canal Tour</option>
+        <option>Countryside Rickshaw Tour</option>
+        <option>Essential Chinatown Walks</option>
+        <option>Green Oases Hidden Gardens of Bangkok</option>
+        <option>Happiness Village</option>
+        <option>Kanchanabury Family Holidays</option>
+        <option>Karen Village at Doi Inthanon</option>
+        <option>Neighborhood Street Food Tour [Chinatown]</option>
+        <option>Neighborhood Street Food Tour [Talad Phlu]</option>
+        <option>Old Town Temples and Markets</option>
+        <option>Organic Adventures</option>
+        <option>Street Food by Night at Chinatown</option>
+        <option>Tai Lue Cultural Delight</option>
+        <option>Thonburi Adventures</option>
+        <option>Thonburi Extension</option>
+        <option>Unique Itinerary</option>
+        <option>Personalized Tour</option>
+      </select>
+    </div>
+  </div>
+  <div class="prog-info" id="progInfo"></div>
+  <div class="field-row">
+    <div class="field"><label>Guide Name *</label><input type="text" id="guideName" placeholder="G.Anna"></div>
+    <div class="field"><label>Total Pax</label><input type="number" id="pax" placeholder="0"></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>Advance Received (THB)</label><input type="number" id="advance" placeholder="0" oninput="calcSummary()"></div>
+    <div class="field">
+      <label>Guide Fee (THB)</label>
+      <input type="number" id="guideFee" placeholder="0" oninput="calcSummary()">
+      <span class="hint">3% withholding tax deducted automatically</span>
+    </div>
+  </div>
+</div>
+
+<!-- AIRPORT TRANSFER -->
+<div class="card">
+  <div class="card-title"><i class="ti ti-plane"></i> Airport Transfer</div>
+  <div class="transfer-grid">
+    <div class="transfer-card arrival">
+      <div class="transfer-label"><i class="ti ti-plane-arrival"></i> Arrival — Pick up</div>
+      <div class="field" style="margin-bottom:8px"><label>Flight No.</label><input type="text" id="arrFlight" placeholder="TG203"></div>
+      <div class="field" style="margin-bottom:8px"><label>Airport</label>
+        <select id="arrAirport">
+          <option value="">— Select —</option>
+          <option>Suvarnabhumi (BKK)</option>
+          <option>Don Mueang (DMK)</option>
+          <option>Chiang Mai (CNX)</option>
+          <option>Phuket (HKT)</option>
+          <option>Samui (USM)</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:8px"><label>Date</label><input type="text" id="arrDate" placeholder="DD/MM/YYYY" maxlength="10" oninput="formatDate(this)"></div>
+      <div class="field" style="margin-bottom:8px"><label>Time</label><input type="text" id="arrTime" placeholder="10:30"></div>
+      <div class="field"><label>Transfer Cost (THB)</label><input type="number" id="arrCost" placeholder="0" oninput="calcSummary()"></div>
+      <div class="field" style="margin-top:8px"><label>Receipt</label>
+        <div class="receipt-cell">
+          <select id="arrBill" style="flex:1;font-size:12px;padding:5px 7px;border:1px solid #e0e0e0;border-radius:6px">
+            <option value="receipt">Receipt</option>
+            <option value="tax">Tax invoice</option>
+            <option value="none">No receipt</option>
+            <option value="cash">Cash</option>
+          </select>
+          <div class="receipt-upload" onclick="triggerUpload('arrImg')" title="Upload receipt image">
+            <i class="ti ti-camera"></i>
+          </div>
+          <input type="file" id="arrImg" accept="image/*" style="display:none" onchange="previewReceipt(this,'arrThumb')">
+          <img id="arrThumb" class="receipt-thumb" style="display:none" onclick="openModal(this.src)">
+        </div>
+      </div>
+    </div>
+    <div class="transfer-card departure">
+      <div class="transfer-label"><i class="ti ti-plane-departure"></i> Departure — Drop off</div>
+      <div class="field" style="margin-bottom:8px"><label>Flight No.</label><input type="text" id="depFlight" placeholder="TG204"></div>
+      <div class="field" style="margin-bottom:8px"><label>Airport</label>
+        <select id="depAirport">
+          <option value="">— Select —</option>
+          <option>Suvarnabhumi (BKK)</option>
+          <option>Don Mueang (DMK)</option>
+          <option>Chiang Mai (CNX)</option>
+          <option>Phuket (HKT)</option>
+          <option>Samui (USM)</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:8px"><label>Date</label><input type="text" id="depDate" placeholder="DD/MM/YYYY" maxlength="10" oninput="formatDate(this)"></div>
+      <div class="field" style="margin-bottom:8px"><label>Time</label><input type="text" id="depTime" placeholder="18:00"></div>
+      <div class="field"><label>Transfer Cost (THB)</label><input type="number" id="depCost" placeholder="0" oninput="calcSummary()"></div>
+      <div class="field" style="margin-top:8px"><label>Receipt</label>
+        <div class="receipt-cell">
+          <select id="depBill" style="flex:1;font-size:12px;padding:5px 7px;border:1px solid #e0e0e0;border-radius:6px">
+            <option value="receipt">Receipt</option>
+            <option value="tax">Tax invoice</option>
+            <option value="none">No receipt</option>
+            <option value="cash">Cash</option>
+          </select>
+          <div class="receipt-upload" onclick="triggerUpload('depImg')" title="Upload receipt image">
+            <i class="ti ti-camera"></i>
+          </div>
+          <input type="file" id="depImg" accept="image/*" style="display:none" onchange="previewReceipt(this,'depThumb')">
+          <img id="depThumb" class="receipt-thumb" style="display:none" onclick="openModal(this.src)">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY EXPENSES -->
+<div class="card">
+  <div class="card-title"><i class="ti ti-calendar"></i> Daily Expenses</div>
+  <div class="day-tab-bar" id="dayTabs"></div>
+  <div id="dayPanels"></div>
+</div>
+
+<!-- SUMMARY -->
+<div class="card">
+  <div class="card-title"><i class="ti ti-calculator"></i> Summary</div>
+  <div class="sum-grid">
+    <div class="sum-box"><div class="sl">Advance Received</div><div class="sv" id="sAdv">฿0</div></div>
+    <div class="sum-box"><div class="sl">Total Expenses (all days)</div><div class="sv" id="sAct">฿0</div></div>
+  </div>
+  <div class="sum-box" id="sDiffBox" style="margin-bottom:10px">
+    <div class="sl">Return (+) / Short (−)</div>
+    <div class="sv" id="sDiff">฿0</div>
+  </div>
+  <hr class="divider">
+  <div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Guide Fee Breakdown</div>
+  <div class="sum-grid-3">
+    <div class="sum-box"><div class="sl">Guide Fee</div><div class="sv" id="sGuideFee">฿0</div></div>
+    <div class="sum-box red"><div class="sl">Withholding Tax (3%)</div><div class="sv" id="sTax">฿0</div></div>
+    <div class="sum-box green"><div class="sl">Net Guide Fee</div><div class="sv" id="sNetFee">฿0</div></div>
+  </div>
+</div>
+
+<!-- REMARKS -->
+<div class="card">
+  <div class="card-title"><i class="ti ti-notes"></i> Additional Remarks</div>
+  <div class="field full"><textarea id="remarks" placeholder="e.g. Some local vendors do not issue receipts, itinerary changes on the day..."></textarea></div>
+</div>
+
+<div class="btn-row">
+  <button class="btn btn-green" id="submitBtn" onclick="submitForm()"><i class="ti ti-send"></i> Submit Report</button>
+  <button class="btn btn-blue" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
+</div>
+<div class="success" id="successMsg">✅ Report submitted successfully! Thank you.</div>
+
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="modal-overlay" id="imgModal" onclick="closeModal()">
+  <span class="modal-close" onclick="closeModal()">✕</span>
+  <img class="modal-img" id="modalImg" src="" alt="Receipt">
+</div>
+
+<script>
+const PRESETS = {
+  "Neighborhood Street Food Tour [Talad Phlu]": {
+    info: "Talad Phlu · Local street food & market vendors",
+    items: [["Roundtrip public transport","","receipt"],["Food for guide","","receipt"],["Food cost (500/pax)","","receipt"],["Water & towels","","receipt"]]
+  },
+  "Bangkok Colorful Night by EV-Tuktuk": {
+    info: "Bangkok · EV-Tuktuk night tour",
+    items: [["Dinner for guide","","receipt"],["Dinner for clients in Chinatown","","receipt"],["Snacks & drinks along the way","","cash"],["Drinks at rooftop bar","","receipt"],["Water & towels","","receipt"]]
+  },
+  "Countryside Canal Tour": {
+    info: "Countryside · Canal & local market",
+    items: [["Public transportation (one way)","","receipt"],["Local train to Mahasawat","","receipt"],["Entrance fee @Mahasawat","","receipt"],["Canal boat @Mahasawat","","cash"],["Lunch","","receipt"],["Water & refreshments (30/person)","","receipt"],["Guide drink & snack","","receipt"]]
+  }
+};
+
+let dayCount = 1;
+let rowCounters = {};
+let receiptImages = {};
+
+function updateDays() {
+  const n = parseInt(document.getElementById('numDays').value);
+  const tabs = document.getElementById('dayTabs');
+  const panels = document.getElementById('dayPanels');
+  const current = document.querySelectorAll('.day-panel').length;
+  if (n > current) {
+    for (let i = current + 1; i <= n; i++) addDay(i);
+  } else {
+    for (let i = current; i > n; i--) {
+      document.getElementById('tab-day-' + i)?.remove();
+      document.getElementById('panel-day-' + i)?.remove();
+    }
+  }
+  calcSummary();
+}
+
+function addDay(num) {
+  rowCounters['day' + num] = 0;
+  const tabs = document.getElementById('dayTabs');
+  const panels = document.getElementById('dayPanels');
+  const tab = document.createElement('button');
+  tab.className = 'day-tab' + (num === 1 ? ' active' : '');
+  tab.id = 'tab-day-' + num;
+  tab.textContent = 'Day ' + num;
+  tab.onclick = () => switchDay(num);
+  tabs.appendChild(tab);
+  const panel = document.createElement('div');
+  panel.className = 'day-panel' + (num === 1 ? ' active' : '');
+  panel.id = 'panel-day-' + num;
+  panel.innerHTML = `
+    <div class="day-header">
+      <span class="day-label">Day ${num}</span>
+      <input type="text" class="day-date-input" placeholder="DD/MM/YYYY" maxlength="10" oninput="formatDate(this)" id="date-day-${num}">
+    </div>
+    <table class="exp-table">
+      <thead><tr>
+        <th style="width:34%">Item / Vendor</th>
+        <th style="width:18%">Amount (THB)</th>
+        <th style="width:20%">Receipt type</th>
+        <th style="width:18%">Slip / Photo</th>
+        <th style="width:6%">Note</th>
+        <th style="width:4%"></th>
+      </tr></thead>
+      <tbody id="rows-day-${num}"></tbody>
+    </table>
+    <button class="add-row-btn" onclick="addRow(${num})"><i class="ti ti-plus"></i> Add item</button>
+    <div class="day-total-bar">Total day ${num}: <strong id="total-day-${num}">฿0</strong></div>
+  `;
+  panels.appendChild(panel);
+  if (PRESETS[document.getElementById('tourName').value]) {
+    const items = PRESETS[document.getElementById('tourName').value].items;
+    if (num === 1) items.forEach(it => addRow(num, it[0], it[1], it[2]));
+  }
+}
+
+function switchDay(num) {
+  document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-day-' + num)?.classList.add('active');
+  document.getElementById('panel-day-' + num)?.classList.add('active');
+}
+
+function addRow(day, name='', amt='', bill='receipt', note='') {
+  rowCounters['day' + day] = (rowCounters['day' + day] || 0) + 1;
+  const rid = 'r' + day + '_' + rowCounters['day' + day];
+  const imgId = 'img_' + rid;
+  const thumbId = 'thumb_' + rid;
+  const tbody = document.getElementById('rows-day-' + day);
+  const tr = document.createElement('tr');
+  tr.id = rid;
+  tr.innerHTML = `
+    <td><input type="text" placeholder="Item / vendor" value="${name}" onchange="calcSummary()"></td>
+    <td><input type="number" placeholder="0" value="${amt}" style="text-align:right" oninput="calcDay(${day});calcSummary()"></td>
+    <td><select>
+      <option value="receipt"${bill=='receipt'?' selected':''}>Receipt</option>
+      <option value="tax"${bill=='tax'?' selected':''}>Tax invoice</option>
+      <option value="none"${bill=='none'?' selected':''}>No receipt</option>
+      <option value="cash"${bill=='cash'?' selected':''}>Cash (local)</option>
+    </select></td>
+    <td>
+      <div class="receipt-cell">
+        <div class="receipt-upload" onclick="triggerUpload('${imgId}')" title="Upload slip/photo"><i class="ti ti-camera"></i></div>
+        <input type="file" id="${imgId}" accept="image/*" style="display:none" onchange="previewReceipt(this,'${thumbId}')">
+        <img id="${thumbId}" class="receipt-thumb" style="display:none" onclick="openModal(this.src)">
+      </div>
+    </td>
+    <td><input type="text" placeholder="Note" value="${note}" style="font-size:11px"></td>
+    <td><button class="del-btn" onclick="document.getElementById('${rid}').remove();calcDay(${day});calcSummary()" title="Remove">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  calcDay(day);
+  calcSummary();
+}
+
+function calcDay(day) {
+  const rows = document.querySelectorAll('#rows-day-' + day + ' tr');
+  let tot = 0;
+  rows.forEach(r => { tot += parseFloat(r.querySelectorAll('input')[1]?.value || 0) || 0; });
+  const el = document.getElementById('total-day-' + day);
+  if (el) el.textContent = '฿' + tot.toLocaleString();
+  return tot;
+}
+
+function calcSummary() {
+  let allExp = 0;
+  document.querySelectorAll('.day-panel').forEach((p, i) => {
+    allExp += calcDay(i + 1);
+  });
+  const arrCost = parseFloat(document.getElementById('arrCost')?.value || 0) || 0;
+  const depCost = parseFloat(document.getElementById('depCost')?.value || 0) || 0;
+  allExp += arrCost + depCost;
+  const adv = parseFloat(document.getElementById('advance')?.value || 0) || 0;
+  const guideFee = parseFloat(document.getElementById('guideFee')?.value || 0) || 0;
+  const tax = Math.round(guideFee * 0.03 * 100) / 100;
+  const netFee = Math.round((guideFee - tax) * 100) / 100;
+  const diff = adv - allExp;
+  document.getElementById('sAdv').textContent = '฿' + adv.toLocaleString();
+  document.getElementById('sAct').textContent = '฿' + allExp.toLocaleString();
+  document.getElementById('sDiff').textContent = (diff >= 0 ? '+' : '') + diff.toLocaleString() + ' ฿';
+  document.getElementById('sGuideFee').textContent = '฿' + guideFee.toLocaleString();
+  document.getElementById('sTax').textContent = '−฿' + tax.toLocaleString();
+  document.getElementById('sNetFee').textContent = '฿' + netFee.toLocaleString();
+  const db = document.getElementById('sDiffBox');
+  db.className = 'sum-box' + (diff > 0 ? ' pos' : diff < 0 ? ' neg' : '');
+}
+
+function loadPreset() {
+  const prog = document.getElementById('tourName').value;
+  const infoEl = document.getElementById('progInfo');
+  if (!prog || !PRESETS[prog]) { infoEl.className = 'prog-info'; infoEl.innerHTML = ''; return; }
+  const p = PRESETS[prog];
+  infoEl.className = 'prog-info show';
+  infoEl.innerHTML = '<strong>Programme:</strong> ' + p.info;
+  const tbody1 = document.getElementById('rows-day-1');
+  if (tbody1) { tbody1.innerHTML = ''; rowCounters['day1'] = 0; p.items.forEach(it => addRow(1, it[0], it[1], it[2])); }
+}
+
+function formatDate(el) {
+  let v = el.value.replace(/\D/g, '');
+  if (v.length >= 3 && v.length <= 4) v = v.slice(0,2) + '/' + v.slice(2);
+  else if (v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4,8);
+  el.value = v;
+}
+
+function triggerUpload(id) { document.getElementById(id)?.click(); }
+
+function previewReceipt(input, thumbId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const thumb = document.getElementById(thumbId);
+    if (thumb) { thumb.src = ev.target.result; thumb.style.display = 'block'; }
+    receiptImages[thumbId] = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openModal(src) {
+  document.getElementById('modalImg').src = src;
+  document.getElementById('imgModal').classList.add('open');
+}
+function closeModal() { document.getElementById('imgModal').classList.remove('open'); }
+
+function loadLogo(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { document.getElementById('logoSlot').innerHTML = `<img src="${ev.target.result}" alt="logo">`; };
+  reader.readAsDataURL(file);
+}
+
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxil1SVUz1nIEVUg--F9tutFul0uuQagQt_edBLKVd2eHMHLdA8hnua71bRZRsUxM0j/exec';
+
+function submitForm() {
+  const b = document.getElementById('bookingNo').value;
+  const t = document.getElementById('tourName').value;
+  const g = document.getElementById('guideName').value;
+  if (!b||!t||!g) { alert('Please fill in Booking No., Programme, and Guide Name.'); return; }
+
+  const adv = parseFloat(document.getElementById('advance').value || 0) || 0;
+  const guideFee = parseFloat(document.getElementById('guideFee').value || 0) || 0;
+  const tax = Math.round(guideFee * 0.03 * 100) / 100;
+  const netFee = Math.round((guideFee - tax) * 100) / 100;
+  const arrCost = parseFloat(document.getElementById('arrCost').value || 0) || 0;
+  const depCost = parseFloat(document.getElementById('depCost').value || 0) || 0;
+
+  const items = [];
+  let grandTotal = arrCost + depCost;
+
+  document.querySelectorAll('.day-panel').forEach((panel, idx) => {
+    const dayNum = idx + 1;
+    const dateEl = document.getElementById('date-day-' + dayNum);
+    const dateVal = dateEl ? dateEl.value : '';
+    panel.querySelectorAll('tbody tr').forEach(r => {
+      const inputs = r.querySelectorAll('input');
+      const sel = r.querySelector('select');
+      const amt = parseFloat(inputs[1]?.value || 0) || 0;
+      const billMap = {tax:'Tax invoice',receipt:'Receipt',none:'No receipt',cash:'Cash (local)'};
+      items.push({
+        day: 'Day ' + dayNum,
+        dayDate: dateVal,
+        name: inputs[0]?.value || '',
+        amount: amt,
+        receipt: billMap[sel?.value] || '',
+        note: inputs[2]?.value || ''
+      });
+      grandTotal += amt;
+    });
+  });
+
+  if (items.length === 0) { alert('Please add at least one expense item.'); return; }
+
+  const payload = {
+    bookingNo: b,
+    programme: t,
+    guideName: g,
+    pax: document.getElementById('pax').value || 0,
+    advance: adv,
+    guideFee: guideFee,
+    tax: tax,
+    netFee: netFee,
+    arrFlight: document.getElementById('arrFlight').value || '',
+    arrAirport: document.getElementById('arrAirport').value || '',
+    arrDate: document.getElementById('arrDate').value || '',
+    arrTime: document.getElementById('arrTime').value || '',
+    arrCost: arrCost,
+    depFlight: document.getElementById('depFlight').value || '',
+    depAirport: document.getElementById('depAirport').value || '',
+    depDate: document.getElementById('depDate').value || '',
+    depTime: document.getElementById('depTime').value || '',
+    depCost: depCost,
+    totalExpenses: grandTotal,
+    returnShort: adv - grandTotal,
+    remarks: document.getElementById('remarks').value || '',
+    items: items
+  };
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Sending...';
+
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    btn.innerHTML = '<i class="ti ti-check"></i> Submitted!';
+    document.getElementById('successMsg').style.display = 'block';
+    window.scrollTo(0, document.body.scrollHeight);
+  })
+  .catch(() => {
+    alert('Connection error. Please try again or use Export Excel instead.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Submit Report';
+  });
+}
+
+function exportExcel() {
+  const b = document.getElementById('bookingNo').value || 'N/A';
+  const t = document.getElementById('tourName').value || 'N/A';
+  const g = document.getElementById('guideName').value || 'N/A';
+  const adv = parseFloat(document.getElementById('advance').value || 0) || 0;
+  const pax = document.getElementById('pax').value || 0;
+  const guideFee = parseFloat(document.getElementById('guideFee').value || 0) || 0;
+  const tax = Math.round(guideFee * 0.03 * 100) / 100;
+  const netFee = Math.round((guideFee - tax) * 100) / 100;
+  const rem = document.getElementById('remarks').value || '';
+  const arrFlight = document.getElementById('arrFlight').value;
+  const arrAirport = document.getElementById('arrAirport').value;
+  const arrDate = document.getElementById('arrDate').value;
+  const arrTime = document.getElementById('arrTime').value;
+  const arrCost = parseFloat(document.getElementById('arrCost').value || 0) || 0;
+  const depFlight = document.getElementById('depFlight').value;
+  const depAirport = document.getElementById('depAirport').value;
+  const depDate = document.getElementById('depDate').value;
+  const depTime = document.getElementById('depTime').value;
+  const depCost = parseFloat(document.getElementById('depCost').value || 0) || 0;
+
+  const data = [
+    ['GUIDE EXPENSE REPORT — SiamRise Travel'],
+    [],
+    ['Booking No.', b, '', 'Programme', t],
+    ['Guide Name', g, '', 'Total Pax', pax],
+    ['Advance (THB)', adv],
+    [],
+    ['— AIRPORT TRANSFER —'],
+    ['', 'Flight No.', 'Airport', 'Date', 'Time', 'Cost (THB)'],
+    ['Arrival (Pick up)', arrFlight, arrAirport, arrDate, arrTime, arrCost],
+    ['Departure (Drop off)', depFlight, depAirport, depDate, depTime, depCost],
+    []
+  ];
+
+  let grandTotal = arrCost + depCost;
+  const panels = document.querySelectorAll('.day-panel');
+  panels.forEach((panel, idx) => {
+    const dayNum = idx + 1;
+    const dateEl = document.getElementById('date-day-' + dayNum);
+    const dateVal = dateEl ? dateEl.value : '';
+    data.push(['— DAY ' + dayNum + (dateVal ? ' (' + dateVal + ')' : '') + ' —']);
+    data.push(['Item / Vendor', 'Amount (THB)', 'Receipt Type', 'Note']);
+    const rows = panel.querySelectorAll('tbody tr');
+    let dayTot = 0;
+    rows.forEach(r => {
+      const inputs = r.querySelectorAll('input');
+      const sel = r.querySelector('select');
+      const name = inputs[0]?.value || '';
+      const amt = parseFloat(inputs[1]?.value || 0) || 0;
+      const billMap = {tax:'Tax invoice',receipt:'Receipt',none:'No receipt',cash:'Cash (local)'};
+      const bill = billMap[sel?.value] || '';
+      const note = inputs[2]?.value || '';
+      data.push([name, amt, bill, note]);
+      dayTot += amt;
+    });
+    data.push(['', 'Day ' + dayNum + ' Total', dayTot, '']);
+    data.push([]);
+    grandTotal += dayTot;
+  });
+
+  data.push(['— SUMMARY —']);
+  data.push(['Total Expenses (incl. transfer)', grandTotal]);
+  data.push(['Advance Received', adv]);
+  data.push(['Return / Short', adv - grandTotal]);
+  data.push([]);
+  data.push(['— GUIDE FEE —']);
+  data.push(['Guide Fee', guideFee]);
+  data.push(['Withholding Tax (3%)', -tax]);
+  data.push(['Net Guide Fee', netFee]);
+  data.push([]);
+  data.push(['Remarks', rem]);
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:30},{wch:16},{wch:18},{wch:18},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Expense Report');
+  XLSX.writeFile(wb, `ExpenseReport_${b}.xlsx`);
+}
+
+updateDays();
+</script>
+</body>
+</html>
